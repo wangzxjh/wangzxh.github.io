@@ -1,0 +1,187 @@
+<?xml version="1.0" encoding="utf-8"?>
+<search>
+  <entry>
+    <title>Gradient Boosting Decision Tree</title>
+    <url>/post/9c68de11.html</url>
+    <content><![CDATA[<h1 id="gbdtgradient-boosting-decision-tree">GBDT(Gradient Boosting Decision Tree)</h1>
+<h2 id="提升树">1.提升树</h2>
+<p>提升树模型的基分类器为决策树，每次训练的结果影响下一次训练的决策树。我们这里只谈回归问题，训练的结果为M个决策树相加。对于二分类问题只需把AdaBoost算法的基分类器换为决策树。 <a id="more"></a></p>
+<p>用前向分步模型表示 <span class="math display">\[
+f_m(x) = f_{m-1}(x) + T(x;\theta_m)
+\]</span></p>
+<p>其中</p>
+<p><span class="math display">\[
+T(x_i;\theta_m) = \sum_{j=1}^J c_j I(x_i \in R_j)
+\]</span> <span class="math inline">\(T(x_i; \theta_m)\)</span>为回归决策树，它将特征空间分割J个区域，每个区域表示为<span class="math inline">\(R_j\)</span>,每个区域设定一个值<span class="math inline">\(c_j\)</span>，当<span class="math inline">\(x_i \in R_j\)</span>时 决策树的输出为<span class="math inline">\(c_j\)</span>。</p>
+<p>当使用平均方差损失函数时 <span class="math display">\[
+\begin{eqnarray}
+L(y_i,f_m(x_i)) &amp;&amp;=\frac{1}{2} (y_i - f_{m-1}(x_i) - T(x_i;\theta_m))^2 \\
+&amp;&amp;=\frac{1}{2}(r_{mi} - T(x_i; \theta_m))^2 \\
+&amp;&amp;= L(r_{mi} ,T(x_i;\theta_m))
+\end{eqnarray}
+\]</span> <span class="math inline">\(r_{mi}\)</span>是当前模型<span class="math inline">\(f_{m-1}(x)\)</span> 的残差<span class="math inline">\(y_i - f_{m-1}(x_i)\)</span>。因此我们可以用当前模型的残差去拟合下一颗决策树。</p>
+<h2 id="梯度提升">2.梯度提升</h2>
+<p>当损失函数不是平均方差时，用损失函数的负梯度近似去代替当前模型的残差 <span class="math display">\[
+[-\frac{\partial L(y_i,f(x)) }{\partial f(x)}]_{f(x)=f_{m-1}(x)}
+\]</span></p>
+<p>算法：</p>
+<ol type="1">
+<li><p>初始化 <span class="math inline">\(f_0(x) = \arg \min_{c} \sum_{i=1}^N L(y_i-c)\)</span></p></li>
+<li><p>对于 m= 1,2,.., M</p>
+<p>a 对于 i = 1,.., N 计算 <span class="math display">\[
+r_{mi}=[-\frac{\partial L(y_i,f(x)) }{\partial f(x)}]_{f(x)=f_{m-1}(x)}
+\]</span> b 对<span class="math inline">\(r_m\)</span>拟合一颗回归树，得到第m颗树的叶结点区域 $ R_{mj}$ ,j=1,2,..,J</p>
+<p>c 对 j=1,2,,…J 计算 <span class="math display">\[
+c_{mj} = \arg \min_{c} \sum_{x_i \in R_mj} L(y_i, f_{m-1}(x) +c)
+\]</span> d 更新 <span class="math inline">\(f_m(x) = f_{m-1}(x) + \sum_{j=1}^j c_{mj} I(x \in R_{mj})\)</span></p></li>
+<li><p>得到提升数 <span class="math inline">\(f_M(x)\)</span>.</p></li>
+</ol>
+]]></content>
+      <categories>
+        <category>机器学习</category>
+      </categories>
+      <tags>
+        <tag>机器学习</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>zigzag 压缩编码</title>
+    <url>/post/2123e93a.html</url>
+    <content><![CDATA[<h1 id="zigzag编码">ZigZag编码</h1>
+<p>在网络传输和数据存储场景中，需要对数据进行压缩。数据压缩的算法非常多，但大部分的数据压缩算法的原理是通过某种编码方式不存储数据中的0比特位，因此0比特位越多，数据压缩的效果越好。ZigZag编码就是一种增加0比例位的编码方式。下面使用Java语言来描述ZigZag编码。 <a id="more"></a> ## 一、编码</p>
+<h3 id="正数">正数</h3>
+<p>假设数据类型为byte的正数11，其二进制表示为：<code>00001011</code></p>
+<ol type="1">
+<li>数据左移一位:<code>00010110</code></li>
+<li>符号位（正数的符号为0）放到最后一位：<code>00010110</code></li>
+</ol>
+<h3 id="负数">负数</h3>
+<p>假设数据类型为byte的负数-11，其二进制在计算机中是用补码表示的，计算过程如下。</p>
+<p>正数原码：<code>00001011</code>。</p>
+<p>反码：<code>11110100</code></p>
+<p>补码（反码加1）：<code>11110101</code></p>
+<p>处理过程：</p>
+<ol type="1">
+<li>左移一位：<code>11101010</code></li>
+<li>符号位放到最后一位:<code>11101011</code></li>
+<li>除最后一位外全部取反:<code>00010101</code></li>
+</ol>
+<h3 id="结论">结论</h3>
+<p>正数经过处理后，前导0和后置0的个数不变。但是负数经过处理后，增加了三个前导0，可以用于压缩。</p>
+<p>结合两种情况得出byte类型数据的编码公式：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line">ZigZag(n) = n&gt;&gt;<span class="number">7</span> ^ n&lt;&lt;<span class="number">1</span></span><br></pre></td></tr></table></figure>
+<p>-11的处理过程如下：</p>
+<ol type="1">
+<li><p><code>11110101 &gt;&gt; 7 = 11111111</code></p></li>
+<li><p><code>11110101 &lt;&lt; 1 = 11101010</code></p></li>
+<li><p><code>11111111^11101010 = 00010101</code></p></li>
+</ol>
+<h2 id="二解码">二、解码</h2>
+<p>ZigZag的逆函数：</p>
+<p><span class="math inline">\(ZigZag^{-1}(n)\)</span>=<code>(n&gt;&gt;&gt;1)^ -(n&amp;1)</code></p>
+<p>负数<code>00010101</code>的解码过程：</p>
+<ol type="1">
+<li><p>n&gt;&gt;&gt;1：<code>00001010</code></p></li>
+<li><p>n&amp;1：<code>00000001</code></p></li>
+<li><p>-(n&amp;1):<code>11111111</code></p></li>
+<li><p><code>1111111^0000101=11110101</code></p></li>
+</ol>
+]]></content>
+      <categories>
+        <category>compression</category>
+      </categories>
+      <tags>
+        <tag>compression</tag>
+        <tag>algorithm</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>高斯混合聚类</title>
+    <url>/post/c9b6a144.html</url>
+    <content><![CDATA[<h1 id="高斯混合聚类">高斯混合聚类</h1>
+<h2 id="高斯混合模型">高斯混合模型</h2>
+<p><span class="math display">\[
+p(Y|\theta)= \sum_{k=1}^K a_k \phi(Y|\theta_k)
+\]</span></p>
+<p>其中 <span class="math display">\[
+\phi(Y|\theta_k)  = \frac{1}{\sqrt{2\pi}\delta_k} \exp(- \frac {(y-u_k)^2}{2\delta_k ^2}) \\
+\sum_{k=1}^K a_k =1
+\]</span> 高斯混合模型的意义可以这样理解，以<span class="math inline">\(a_1,a_2,…,a_K\)</span>定义的概率分布从K个高斯分布中选择一个，然后再用这个分布生成一个观测变量<span class="math inline">\(y_i\)</span>,这样的过程重复N次，得到观测变量序列<span class="math inline">\(Y={y_1,y_2,…,y_N}\)</span>. <a id="more"></a></p>
+<h2 id="聚类定义">聚类定义</h2>
+<p>设样本为 <span class="math inline">\(X={x_1,x_2,…,x_M}\)</span> ,按照高斯混合模型的定义，这m个样本是由高斯混合模型生成m次得到的，每个样本的生成都由有k个高斯分布组成。如果对于样本j,第k个混合成分的概率为<span class="math inline">\(\gamma_{jk}\)</span>。那么样本j的类标记为 <span class="math display">\[
+C_j = \arg \max_{k} \gamma_{jk}
+\]</span></p>
+<h2 id="使用em算法求解高斯混合模型">使用EM算法求解高斯混合模型</h2>
+<h3 id="e步">1.E步</h3>
+<p><span class="math display">\[
+Q(\theta,\theta^{(i)}) = \sum_{Z} p(Z|Y,\theta^{(i)}) \ln p(Y,Z|\theta)
+\]</span></p>
+<p>对于高斯混合模型来说，Y为观测变量，<span class="math inline">\(\gamma\)</span>为隐变量 <span class="math display">\[
+\gamma_{jk}=\left\{
+\begin{aligned}
+1&amp;&amp;  \quad 如果 y_j 由第k个高斯分布产生\\
+0&amp;&amp;   \quad\\
+\end{aligned}
+\right.
+\]</span></p>
+<p>完全似然函数</p>
+<p><span class="math display">\[
+P(Y,\gamma|\theta) = \prod_{j=1}^Np(y_j, \gamma_{j1} ,\gamma_{j2} ,..,\gamma_{jK}|\theta)\\
+=\prod_{j=1}^N \prod_{k=1}^K (a_k\phi(y_i|\theta_k))^{\gamma_{jk}} \\
+=\prod_{k=1}^K a_k^{n_k} \prod_{j=1}^N \phi(y_i|\theta_k)^{\gamma_{jk}} \\
+\]</span></p>
+<p>其中 <span class="math inline">\(n_k =\sum_{j=1}^N \gamma_{jk}, \sum_{k=1}^Kn_k = N\)</span></p>
+<p>$$ <span class="math display">\[\begin{eqnarray}
+\ln p(Y,\gamma|\theta) = \sum_{k=1}^ K (\sum_{j=1}^N \gamma_{jk} \ln a_k + \sum_{j=1}^N \gamma_{jk} (-0.2ln(2 \pi) -\ln \delta_k -\frac{(y_j - u_k)^2}{2\delta_k^2})  )  \\
+
+
+\end{eqnarray}\]</span> $$</p>
+<p>Q函数为</p>
+<p><span class="math display">\[
+\begin{eqnarray}
+Q(\theta,\theta(i))&amp;&amp;=\sum_{k=1}^ K (\sum_{j=1}^N (\sum_{\gamma_{jk}} \gamma_{jk} p(\gamma_{jk}|y_j,\theta_k^{(i)}))\ln a_k + \sum_{j=1}^N (\sum_{\gamma_{jk}} \gamma_{jk} p(\gamma_{jk}|y_j,\theta_k^{(i)})) (-0.2ln(2 \pi) -\ln \delta_k -\frac{(y_j - u_k)^2}{2\delta_k^2})  ) \\
+&amp;&amp;=\sum_{k=1}^ K (\sum_{j=1}^N \hat{\gamma_{jk}} \ln a_k + \sum_{j=1}^N \hat{\gamma_{jk}} (-0.2ln(2 \pi) -\ln \delta_k -\frac{(y_j - u_k)^2}{2\delta_k^2})  )
+\end{eqnarray}
+\]</span></p>
+<p><span class="math inline">\(\gamma_{jk}\)</span>的期望为</p>
+<p><span class="math display">\[
+\begin{eqnarray}
+\hat{\gamma_{jk}} &amp;&amp;=\sum_{\gamma_{jk}}\gamma_{jk} p(\gamma_{jk}|y_j,\theta_k^{(i)})\\
+&amp;&amp;=p(\gamma_{jk}=1|y_j,\theta_k^{(i)}) \\
+&amp;&amp;= \frac {p(\gamma_{jk} = 1, y_j| \theta_k^{(i)})}{\sum_{k=1}^k p(\gamma_{jk} = 1, y_j| \theta_k^{(i)})} \\
+&amp;&amp;=\frac {p(y_j|\gamma_{jk} = 1,  \theta_k^{(i)}) p(\gamma_{jk} = 1,|\theta^{(i)})}{\sum_{k=1}^k p(y_j|\gamma_{jk} = 1,  \theta_k^{(i)}) p(\gamma_{jk} = 1,|\theta^{(i)})} \\
+&amp;&amp;=\frac {a_k \phi(y|\theta^{(i)})}{\sum_{k=1}^k a_k \phi(y|\theta^{(i)})}
+\end{eqnarray}
+\]</span></p>
+<h3 id="m步">2.M步</h3>
+<p>对<span class="math inline">\(u_k\)</span>求导 <span class="math display">\[
+\begin{eqnarray}
+&amp;&amp;\frac{\partial Q}{\partial u_k} =\sum_{j=1}^N  \hat{\gamma_{jk}} \frac{y_j - u_k}{\delta_k^2} =0 \\
+&amp;&amp;u_k= \frac{\sum_{j=1}^N \hat{\gamma_{jk}} y_j}{\sum_{j=1}^N \hat{\gamma_{jk}}}
+\end{eqnarray}
+\]</span> 对<span class="math inline">\(\delta_k\)</span> 求导 <span class="math display">\[
+\begin{eqnarray}
+&amp;&amp;\frac{\partial Q}{\partial \delta_k} = \sum_{k=1}^N \hat{\gamma_{jk}} (- \frac{1}{\delta_k} + \delta_k^{-3}(y_j - u_k)^2) = 0\\
+&amp;&amp;  \delta_k^2 = \frac{\sum_{j=1}^j \hat{\gamma_{jk}} (y_j - u_k)^2}{\sum_{j=1}^j \hat{\gamma_{jk}}}
+\end{eqnarray}
+\]</span> 对<span class="math inline">\(a_k\)</span>求导</p>
+<p>因为 <span class="math inline">\(\sum_{k=1}^Ka_k =1\)</span> ， 拉格朗日函数为 <span class="math display">\[
+\begin{eqnarray}
+&amp;&amp;L(a) = Q(\theta, \theta^{(i)}) + \lambda (\sum_{k=1}^k a_k  -1) \\
+&amp;&amp;\frac{\partial L(a)}{\partial a_k} = \sum_{j=1}^N \frac{\hat{\gamma_{jk}}}{a_k} + \lambda = 0 \\
+&amp;&amp;a_k= - \frac{\sum_{j=1}^N \hat{\gamma_{jk}}}{\lambda} \\
+&amp;&amp; \sum_{k=1}^{K} a_k =  - \frac{\sum_{k=1}^{K} \sum_{j=1}^N \hat{\gamma_{jk}}}{\lambda} =1   \\
+&amp;&amp; \lambda = -N \\
+&amp;&amp;a_k = \frac{\sum_{j=1}^N \hat{\gamma_{jk}}}{N}
+\end{eqnarray}
+\]</span></p>
+]]></content>
+      <categories>
+        <category>机器学习</category>
+      </categories>
+      <tags>
+        <tag>机器学习</tag>
+        <tag>聚类</tag>
+      </tags>
+  </entry>
+</search>
